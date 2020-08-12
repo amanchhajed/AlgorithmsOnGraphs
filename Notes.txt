@@ -1,0 +1,492 @@
+Graphs: Represents connection between objects
+- Collection V of vertices and collection E of edges, each conencting 2 vertices of V
+
+Representation of graphs in code:
+- Vertices, Edges connecting vertices
+
+Adjacency Matrix: Entries 1 if there is an edge, else 0
+
+Adjacency List: Each vertex storing list of neighbors (connected by edges)
+
+Graph algorithms runtime depend on |V| and |E|
+
+Graph Exploration:
+
+Paths: in a graph G is a sequence of vertices such that each vertex in the sequence is connected to the next one by an edge.
+
+Reachability Problem:
+Input: Graph G and vertex s
+Output: Collection of vertices v of G so that there is a path from s to v
+
+Visit markers: To keep track of vertices found. bool visited[]
+Unprocesed Vertices: Keep a list of vertieces with edges left to check
+
+Depth First Ordering: Explore new edges in DF order - Follow a long path forward, only backtracking when we hit a dead end
+
+Explore(v):
+	visited[v] <- true
+	for (v,w) in E:
+		if not visited[v]:
+			Explore(w)
+
+Runtime:
+Each explored vertex is marked visited
+No vertex is explored after visited once
+Each vertex is explored exactly once
+
+O(|E|)
+
+Connectivity:
+
+The vertices of a graph G can be partitioned into Connected components so that v is reachable from w iff they are the same connected component
+
+Previsit and Postvisit Ordering:
+
+- Plain DFS marks all vertices as visited
+- Need to track of other data to be useful
+- Augment function to store extra info
+
+Explore(v):
+	visited[v] = true
+	previsit(v)
+	for (v,w) in E:
+		if not visited[w]:
+			Explore(w)
+	postvisit(w)
+
+Init clock to 1
+
+previsit(v):
+	pre[v] = clock
+	clock += 1
+postvisit(v):
+	post[v] = clock
+	clock += 1
+
+
+For any vertices u,v the intervals [pre(u), post(u)] and [pre(v), post(v)] are either nested or disjoint
+Interleaved is not possible
+
+
+
+
+
+Directed Acyclic Graphs:
+A directed graph is a graph where each edge has a start vertex and an end vertex
+- Can still run DFS in directed graphs
+- Only follow directed edges
+- Explore(v) will find all edges reachable from v
+
+Example: Tasks which should be performed in certain order
+
+Linear ordering: Order tasks respect to some dependencies based on directed edges
+
+If G contains a cycle, it cannot be linearly ordered
+
+DAG: Directed graph with no cycles
+
+Topological Sort:
+Source: vertex with no incoming edges
+Sink: Vertex with no outgoing edges
+
+Idea:
+1. Find a sink
+2. Put an end of order
+3. Remove from graph
+4. Repeat
+
+Algo:
+DFS(G)
+Sort vertices by reverse post order
+
+If G is a DAG with an edge from u to v
+post(u) > post(v)
+
+Strongly connected Components
+In a Directed graph, 2 vertices are said to be connected if both are reachable from each other
+
+A directed graph can be partitioned into strongly connected components where two vertices are connected if and only if they are in the same component
+
+Computing strongly connected components:
+
+Easy Algo:
+For each vertex v:
+	run explore(v) to determine vertices reachable from v
+for each vertex u:
+	find the u reachable from v that can alsi reach v
+
+Sink Components:
+If v is a sink SCC, explore(v) finds vertices reachable from v. This is exactly the SCC of v
+
+If C and C' are 2 SCC with an edge from some vertex of tC to some vertex of C', then largest post in C bigger than largest post in C'
+
+The vertex with largest postorder number is in a source component
+- But we wanted a sink component
+
+Let GR be the graph obtained from G by reversing all the edges
+Source component in GR will be sink component in G
+
+Run DFS and find the source component in GR - that'll be sink component in G
+
+
+
+SCCs(G):
+	run DFS(GR)
+	let v have largest post number
+	run Explore(V)
+	vertices found are first SCC
+	Remove from G and repeat
+
+Improvement:
+	Don't need to rerun DFS on GR
+	Largest remaining post number comes from sink component
+
+SCCs(G):
+	Run DFS(GR
+	for v in V in reverse postOrder:
+		if not visited(v):
+			Explore(v)
+			mark visited vertices as new SCC
+
+Runtime: Essentially DFS on GR and then on G
+	- O(|V| + |E|)
+
+
+Paths in Graphs:
+Shortest path possible between 2 vertices
+
+Length of the path: number of edges in the path
+Distance between 2 vertices is the length of shortest path between them
+
+Breadth First Search:
+
+BFS(G,s):
+
+for all u in V:
+	dist[u] = inf
+dist[s] = 0
+Q = queue{s}
+while Q is not empty:
+	u <- dequeue(Q)
+	for all edges coming out of u:
+		if dist[v] = inf:
+			Enqueue(Q,v)
+			dist[v] = dist[u] + 1
+
+Running time: O(|E| + |V|)
+Proof: Each vertex is enqueued at most once so |V|
+Each edge is examined either once(for directed) or twice(undirected) so |E|
+
+Shortest Path Tree:
+
+Constructing shortest path tree from a vertex s
+
+BFS(G, s):
+for all u in V:
+	dist[u] = inf
+	prev[u] = nil
+dist[s] = 0
+prev[s] = s
+
+Q = {s}
+while Q is not empty:
+	u = Dequeue(Q)
+	for all edges coming out of u:
+		if dist[v] = inf:
+			Enqueue(Q, v)
+			dist[v] = dist[u]+1
+			prev[v] = u
+
+reconstructing the shortest path tree
+
+Reconstruct(S,u, prev):
+	result = []
+	while u not equal to S:
+		result.append(u)
+		u = prev[u]
+	return reverse(result)
+
+Paths in graphs: Fastest Route
+Optimal substructure:
+Any subpath of an optimal path is also optimal
+
+Dijkstra's Algorithm:
+- We maintain a set R of vertices which dist is already set correctly
+- The first vertex added to R is S
+- On each iteration, we take a vertex outside of R with the minimal dist-value, add it to R and relax all its outgoing edges
+
+Dijkstra(G,s)
+for all u in V:
+	dist[u] = inf
+	prev[u] = nil
+dist[s] = 0
+H = MinQueue(V) // dist-values as keys
+while H is not empty:
+	u = ExtractMin(H)
+	for all edges coming out of u:
+		if dist[v] > dist[u] + w(u,v):
+			dist[v = dist[u] + w(u,v)
+			prev[v] = u
+			ChangePriority(H, v, dist[v])
+
+Running time:
+
+Total Running time:
+T(MakeQueue) + |V|.T(ExtractMin) + |E|.T(ChangePriority)
+
+priority queue implementation using binary heap: 
+|V| + |V|log(|V|) + |E|log|V|
+
+= |V| + |E|log|V|
+
+Currency Exchange:
+You can convert some currencies into some others with given exchange rates. What is the maximum amount in Russian rubles you can get from 1000 US dollars using unlimited number of currency conversions? Is it possible to get as many Russianl rubles as you want?
+
+
+Input: Currency exchange graph with weighted directed edges ei between some pairs of currencies with weights r_ei corresponding to the exchange rate.
+
+Output: Maximize product of e_i over path e_1 to e_k from USD to RUR
+
+Reduction to shortest path:
+
+- Replace products with sum by taking log of weights
+- negate weights to solve minimization problem instead of maximization
+
+Bellman Ford Algorithm:
+works for negative edges as well
+
+for all u in V:
+	dist[u] = 0
+	prev[u] = nil
+dist[s] = 0
+repeat |V|-1 times:
+	for all edges (u,v):
+		relax(u,v)
+O(|V||E|)
+
+
+
+Detecting negative weight cycles:
+A graph G contains  a negative weight cycle iff |V|th iteration of BellmanFord updates some dist-value
+
+Finding negative cycle:
+- Run |V| iterations of Bellman Ford algorithm, save node v relaxed on last iteration
+- v is reachable from a negative cycle
+- Start from x = v, follow the link x = prev[x] for |V| times - will definitely be on the cycle
+- Save y = x and go x = prev[x] until x = y again
+
+Detect Infinite arbitrage:
+It is possible to get any amout of currency u from currency S if and only if u is reachable from some node w for which dist[w] decreased on iteration V of Bellman-Ford
+
+- Do |V| iterations of BellmanFord, save all nodes relaxed on Vth iteration - set A
+- Put all nodes from A in queue Q
+- Do BFS search with queue Q and find all nodes reachable from A
+- All those nodes and only those nodes can have infinite arbitrage
+
+Reconstruct Infinite arbitrage
+- During BFS, remember the parent of each visited node
+- Reconstruct the path u from some node w relaxed on iteration V
+- Go back from w to find negative cycle from which w is reachable
+- Use this negative cycle to achieve infinite arbitrage from S to u
+
+
+Minimum spanning trees:
+Input: A connected, undirected graph G = (V,E) with positive edge weights
+Output: A subset of edges E' such that the graph (V,E') is connected
+
+A tree on n vertices has n-1 edges
+
+An undirected graph is a tree iff there is a unique path between any pair of edges
+
+2 Greedy algorithms to find MST:
+Kruskal's algorithm: Repeatedly add the next lightest edge if this doesn't produce a cycle
+Prim's algorithm: Repeatedly attach a new vertex to the current tree by a lightest edge
+
+Kruskal Algorithm:
+
+Implementation Details:
+- Use Disjoint Sets data structure
+- Initially each vertex lies in a separate set
+- Each se t is the set of vertices of a connected component
+- To check whether the current edge {u,v} produces a cycle, we check whether u and v belong to the same set
+
+Kruskal(G):
+for all u in V:
+	MakeSet(u)
+X = {}
+sort the edges E by weight
+for all {u,v} in E in non decreasing weight order:
+	if Find(u) != Find(v):
+		add {u,v} to X
+		Union(u,v)
+return X
+
+
+
+Runtime:
+Sorting = ElogE = ElogV^2 = 2ElogV = O(|E|log|V|)
+Processing edges: 2E.T(find) + VT(Union) = (E+V)logV = |E|log|V|
+
+Total running time: O(|E|log|V|)
+
+Prims Algorithm:
+- X is always a subtree, grows by one edge at each iteration
+- We add a lightest edge between vertex of the tree and a vertex not in the tree
+- Very similar to Dijkstra's algorithm
+
+Prim(G):
+for all u in V:
+	cost[u] = inf
+	parent[u] = nil
+pick initial vertex u0
+cost[u0] = 0
+prioQ = MakeQueue(V) // using key as cost
+while Prio is not empty:
+	v = ExtractMin(PrioQ)
+	for all {v,z} in E:
+		if z in PrioQ and cost[z] > w(v,z):
+			cost[z] = w(v,z)
+			parent[z] = v
+			ChangePriority(PrioQ, z, cost[z])
+Running time:
+|V|.T(ExtractMin) + |E|.T(ChangePriority)
+= O(|V|+|E|) log|V|
+= O(|E|log|V|)
+
+Advanced Shortest Paths:
+
+Bidirectional Dijkstra
+Input: A graph G with non negative edge weights, a source vertex s and a target vertex t
+Output: Shortest path between s and t in G
+
+Goal: Linear time for undirected graphs
+Idea: When a vertex u is selected via ExtractMin
+dist[u] = d(s,u)
+- When a vertex is extracted from the priority queue for processing, all the vertices at smaller distances have already been processed
+
+- As soon as we find vertex t, we can stop Dijkstra algo
+
+
+Bidirectional Search: Start from both s and t and stop as we meet from both the paths
+
+- Do one turn forward from s
+- Do one turn backward from t
+
+- Roughly 2x speedup
+Regular search: 4*pi*r^2
+Bidirectional: 2*pi*r^2
+
+Six Handshakes:
+- Can pass a message from any person to any person in at most 6 handshakes
+- Six degrees of separation idea
+
+Facebook:
+Suppose an average person has around 100 fb friends
+- 10000 friends of friends
+- 1000000 friends of friends of friends
+
+Find the shortest path from Michael to Bob via friends connections
+- For the 2 farthest people, Dijkstra has to look through 2 billion people
+If we only consider friends of friends of Michael and Bob, we find a connection
+- Roughly 1M friends of friends
+- 1M + 1M = 2M people, 1000 times faster
+
+Meet in the middle:
+Instead of searching for all possible objects, search for first halves and for second halves separately
+
+Typically roughly O(Root N) instaed of O(N)
+
+Reversed Graph GR: graph with the same set of vertices V and the set of reversed edges E^R such taht for any edge (u,v) in E there is an edge (v,u) in E^R and vice versa
+
+Bidirectional Dijkstra:
+- Build G^R
+- Start Dijkstra from s in G and from t in G^R
+- Alternate between Dijkstra steps in G and in G^R
+- Stop when some vertex v is processed both in G and G^R
+
+Computing Distance:
+Let dist[u] be the distance estimate in the forward Dikjkstra from s in G and dist_r[u] the same in backward Dijkstra from t in G^R.
+After some node v is processed in both G and G^R, some shortest path from s to t passes through some node u which is processed either in G, or in G^R or both and
+D(s,t) = dist[u] + dist_r[u]
+
+
+
+
+BidirectionalDijkstra(G,s,t):
+Gr = ReverseGraph(G)
+Fill dist, distr with inf for each node
+dist[s] = 0, distr[t]=0
+Fill prev, prev_r with nil for each node
+proc = empty, proc_r = empty
+do:
+	v = ExtractMin(dist)
+	Process(v, G, dist, prev, proc)
+	if v in proc_r:
+		return ShortestPath(s, dist, prev, proc, t, ...)
+	v_r = ExtractMin(distr)
+	Process(v_r, Gr, distr, prevr, procr)
+	if v_r in proc:
+		return ShortestPath(s, dist, prev, proc, t, ...)
+while True
+
+
+
+Relax(u,v,dist,prev):
+	if dist[v] > dist[u] + w(u,v)
+		dist[v] = dist[u] + w(u,v)
+		prev[v] = u
+
+ShortestPath(s,dist, prev, proc, t, distr, prevr, procr):
+
+distance = inf, ubest = nil
+for u in proc + procr:
+	if dist[u]+ dist_r[u] < distance:
+		ubest = u
+		distance = dist[u]+distr[u]
+path = empty
+last = ubest
+while last != s:
+	path.Append(last)
+	last = prev[last]
+
+path = Reverse(path)
+last = ubest
+while last != t:
+	last = prevr[last]
+	path.append(last)
+return distance, path
+
+Process(u, G, dist, prev, proc)
+for (u, v) ∈ E(G):
+	Relax(u, v, dist, prev)
+	proc.Append(u)
+
+
+
+A* algorithm:
+
+Potential function (pi): Maps vertices to real numbers
+
+New edge weights: lnew(u,v) = l(u,v) - pi(u) + pi(v)
+
+Replacing l by lnew doesn't change shortest paths
+
+For any 2 vertices s and t in the graph and any path P between them:
+lnew(P) = l(P) - pi(s) + pi(t)
+
+Intuition:
+pi(v) is an estimation of d(v,t) = how far is it from here to t
+If we have such estimation, we can often avoid going wrong direction - directed search
+
+Typically pi(v) is a lower bound on d(v,t)
+
+On a real map, path from v to t cannot be shorter than the straight line segment from v to t
+
+
+A*:
+- On each step, pick the vertex v minimizing dist[v] - pi(s) + pi(v)
+- pi(s) is same for all v, so v minimizes dist[v] + pi(v)  most promising vertex
+- pi(v) is an estimate of d(v,t)
+- Pick the verte v with minimum current estimate of d(s,v) + d(v,t)
+
+The tighter the lower bounds, fewer vertices will be scanned
